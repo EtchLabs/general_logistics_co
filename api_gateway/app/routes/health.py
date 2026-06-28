@@ -1,0 +1,90 @@
+import time
+from typing import Any
+
+import asyncpg
+from fastapi import APIRouter, Request
+from motor.motor_asyncio import AsyncIOMotorClient
+from redis.asyncio import Redis
+
+from app.config import get_settings
+
+router = APIRouter(tags=["health"])
+
+_start_time = time.monotonic()
+
+
+async def _check_postgres() -> dict[str, Any]:
+    settings = get_settings()
+    try:
+        conn = await asyncpg.connect(settings.postgres_dsn, timeout=3)
+        try:
+            await conn.fetchval("SELECT 1")
+            return {"status": "ok"}
+        finally:
+            await conn.close()
+    except Exception as exc:  # noqa: BLE001
+        return {"status": "error", "detail": str(exc)}
+
+
+async def _check_mongo() -> dict[str, Any]:
+    settings = get_settings()
+    client: AsyncIOMotorClient | None = None
+    try:
+        client = AsyncIOMotorClient(settings.mongo_uri, serverSelectionTimeoutMS=3000)
+        await client.admin.command("ping")
+        return {"status": "ok"}
+    except Exception as exc:  # noqa: BLE001
+        return {"status": "error", "detail": str(exc)}
+    finally:
+        if client is not None:
+            client.close()
+
+
+async def _check_redis() -> dict[str, Any]:
+    settings = get_settings()
+    client: Redis | None = None
+    try:
+        client = Redis.from_url(settings.redis_url, decode_responses=True)
+        pong = await client.ping()
+        if pong:
+            return {"status": "ok"}
+        return {"status": "error", "detail": "unexpected ping response"}
+    except Exception as exc:  # noqa: BLE001
+        return {"status": "error", "detail": str(exc)}
+    finally:
+        if client is not None:
+            await client.aclose()
+
+
+@router.get("/health")
+async def health(request: Request) -> dict[str, Any]:
+    settings = get_settings()
+    dependencies = {
+        "postgres": await _check_postgres(),
+        "mongo": await _check_mongo(),
+        "redis": await _check_redis(),
+    }
+    overall = (
+        "ok"
+        if all(dep["status"] == "ok" for dep in dependencies.values())
+        else "degraded"
+    )
+    uptime_seconds = round(time.monotonic() - _start_time, 2)
+
+    return {
+        "service": settings.service_name,
+        "version": settings.service_version,
+        "status": overall,
+        "uptime_seconds": uptime_seconds,
+        "correlation_id": getattr(request.state, "correlation_id", None),
+        "dependencies": dependencies,
+    }
+
+
+@router.get("/")
+async def root() -> dict[str, str]:
+    settings = get_settings()
+    return {
+        "service": settings.service_name,
+        "message": "General Logistics Co API Gateway",
+    }
