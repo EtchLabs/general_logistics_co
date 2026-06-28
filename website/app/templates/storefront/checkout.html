@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout — General Logistics Co{% endblock %}
+
+{% block content %}
+<h1 style="font-size:1.6rem; font-weight:600; color:var(--black); margin:0 0 0.35rem;">Checkout</h1>
+<p style="font-size:0.85rem; color:var(--gray-500); margin:0 0 1rem;">Your order will be submitted to General Logistics Co fulfillment.</p>
+
+<div class="glc-notice" style="margin-bottom:1.75rem;">
+  Demo mode: contact and shipping fields are pre-filled — just click <strong>Place order</strong>.
+</div>
+
+{% if error %}
+<div class="glc-alert-error" style="margin-bottom:1.25rem;">{{ error }}</div>
+{% endif %}
+
+<div style="display:grid; gap:2rem; grid-template-columns:3fr 2fr; align-items:start;">
+
+  <form action="/checkout" method="post" style="display:flex; flex-direction:column; gap:1.25rem;">
+
+    <!-- Contact -->
+    <div class="glc-section">
+      <h2 style="font-size:1rem; font-weight:600; color:var(--black); margin:0 0 0.25rem;">Contact</h2>
+      <p style="font-size:0.8rem; color:var(--gray-500); margin:0 0 1.1rem;">Creates an account if you're new, or signs you in if you've ordered before.</p>
+      <div style="display:grid; gap:0.85rem; grid-template-columns:1fr 1fr;">
+        <div style="grid-column:1/-1;">
+          <label class="glc-label">Email</label>
+          <input type="email" name="email" required value="{{ demo.email }}" class="glc-input">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label class="glc-label">Password</label>
+          <input type="password" name="password" required minlength="8" value="{{ demo.password }}" class="glc-input">
+        </div>
+        <div>
+          <label class="glc-label">First name</label>
+          <input type="text" name="first_name" required value="{{ demo.first_name }}" class="glc-input">
+        </div>
+        <div>
+          <label class="glc-label">Last name</label>
+          <input type="text" name="last_name" required value="{{ demo.last_name }}" class="glc-input">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label class="glc-label">Phone (optional)</label>
+          <input type="tel" name="phone" value="{{ demo.phone }}" class="glc-input">
+        </div>
+      </div>
+    </div>
+
+    <!-- Shipping -->
+    <div class="glc-section">
+      <h2 style="font-size:1rem; font-weight:600; color:var(--black); margin:0 0 1.1rem;">Shipping address</h2>
+      <div style="display:grid; gap:0.85rem; grid-template-columns:1fr 1fr;">
+        <div style="grid-column:1/-1;">
+          <label class="glc-label">Address line 1</label>
+          <input type="text" name="line1" required value="{{ demo.line1 }}" class="glc-input">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label class="glc-label">Address line 2</label>
+          <input type="text" name="line2" value="{{ demo.line2 }}" class="glc-input">
+        </div>
+        <div>
+          <label class="glc-label">City</label>
+          <input type="text" name="city" required value="{{ demo.city }}" class="glc-input">
+        </div>
+        <div>
+          <label class="glc-label">State</label>
+          <input type="text" name="state" required maxlength="2" value="{{ demo.state }}" class="glc-input">
+        </div>
+        <div>
+          <label class="glc-label">Postal code</label>
+          <input type="text" name="postal_code" required value="{{ demo.postal_code }}" class="glc-input">
+        </div>
+        <div>
+          <label class="glc-label">Country</label>
+          <input type="text" name="country" value="{{ demo.country }}" maxlength="2" class="glc-input">
+        </div>
+      </div>
+    </div>
+
+    <!-- Coupon -->
+    <div class="glc-section">
+      <label class="glc-label">Coupon code (optional)</label>
+      <input type="text" name="coupon_code" placeholder="SAVE10" value="{{ demo.coupon_code }}" class="glc-input" style="max-width:16rem;">
+    </div>
+
+    <button type="submit" class="btn-dark" style="width:100%; padding:0.8rem;">Place order</button>
+  </form>
+
+  <!-- Order summary -->
+  <aside class="glc-section" style="position:sticky; top:1rem;">
+    <h2 style="font-size:1rem; font-weight:600; color:var(--black); margin:0 0 1rem;">Order summary</h2>
+    <ul style="list-style:none; margin:0; padding:0; border-top:1px solid var(--gray-300);">
+      {% for item in cart_items %}
+      <li style="display:flex; justify-content:space-between; padding:0.75rem 0; border-bottom:1px solid rgba(212,212,212,0.5); font-size:0.875rem;">
+        <span style="color:var(--gray-700);">{{ item.product_name }} &times; {{ item.quantity }}</span>
+        <span style="font-weight:500;">${{ "%.2f"|format(item.line_total) }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <div style="display:flex; justify-content:space-between; padding:0.9rem 0 0; font-weight:700; font-size:0.95rem;">
+      <span>Subtotal</span>
+      <span>${{ "%.2f"|format(subtotal) }}</span>
+    </div>
+    <p style="margin:0.5rem 0 0; font-size:0.75rem; color:var(--gray-400);">Tax and shipping calculated at order processing.</p>
+  </aside>
+
+</div>
+{% endblock %}

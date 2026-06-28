@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard — General Logistics Co{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:2rem;">
+  <p class="glc-eyebrow" style="margin-bottom:0.6rem;">Internal</p>
+  <h1 style="font-size:1.7rem; font-weight:600; color:var(--black); margin:0 0 0.35rem;">Operations Dashboard</h1>
+  <p style="font-size:0.88rem; color:var(--gray-500); margin:0;">Internal overview of orders and catalog health.</p>
+</div>
+
+{% if errors %}
+<div style="margin-bottom:1.5rem; display:flex; flex-direction:column; gap:0.5rem;">
+  {% for err in errors %}
+  <div class="glc-alert-warn">{{ err }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Stat cards -->
+<div style="display:grid; gap:1rem; grid-template-columns:repeat(4, 1fr); margin-bottom:2rem;">
+  <div class="glc-section" style="padding:1.25rem;">
+    <p style="font-size:0.78rem; font-weight:500; color:var(--gray-500); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">Total Orders</p>
+    <p style="font-size:2rem; font-weight:700; color:var(--black); margin:0;">{{ stats.total_orders }}</p>
+  </div>
+  <div class="glc-section" style="padding:1.25rem;">
+    <p style="font-size:0.78rem; font-weight:500; color:var(--gray-500); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">Pending / Confirmed</p>
+    <p style="font-size:2rem; font-weight:700; color:#d97706; margin:0;">{{ stats.pending_orders }}</p>
+  </div>
+  <div class="glc-section" style="padding:1.25rem;">
+    <p style="font-size:0.78rem; font-weight:500; color:var(--gray-500); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">In Fulfillment</p>
+    <p style="font-size:2rem; font-weight:700; color:var(--blue); margin:0;">{{ stats.in_fulfillment }}</p>
+  </div>
+  <div class="glc-section" style="padding:1.25rem;">
+    <p style="font-size:0.78rem; font-weight:500; color:var(--gray-500); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">Catalog SKUs</p>
+    <p style="font-size:2rem; font-weight:700; color:#15803d; margin:0;">{{ stats.catalog_size }}</p>
+  </div>
+</div>
+
+<!-- Tables -->
+<div style="display:grid; gap:1.5rem; grid-template-columns:1fr 1fr;">
+
+  <!-- Recent orders -->
+  <div class="glc-card" style="overflow:hidden;">
+    <div style="padding:1rem 1.25rem; border-bottom:1px solid var(--gray-300);">
+      <h2 style="font-size:0.95rem; font-weight:600; color:var(--black); margin:0;">Recent Orders</h2>
+    </div>
+    {% if orders %}
+    <table class="glc-table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Status</th>
+          <th style="text-align:right;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td style="font-family:monospace; font-size:0.8rem; color:var(--gray-700);">{{ order.id[:8] }}…</td>
+          <td>
+            <span style="display:inline-flex; align-items:center; padding:0.2rem 0.6rem; border-radius:999px; background:var(--gray-100); border:1px solid var(--gray-300); font-size:0.72rem; font-weight:500; color:var(--gray-700); text-transform:capitalize;">{{ order.status }}</span>
+          </td>
+          <td style="text-align:right; font-weight:500;">${{ order.grand_total }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="padding:2.5rem; text-align:center; color:var(--gray-400); font-size:0.88rem;">No orders yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Catalog snapshot -->
+  <div class="glc-card" style="overflow:hidden;">
+    <div style="padding:1rem 1.25rem; border-bottom:1px solid var(--gray-300);">
+      <h2 style="font-size:0.95rem; font-weight:600; color:var(--black); margin:0;">Catalog Snapshot</h2>
+    </div>
+    <ul style="list-style:none; margin:0; padding:0;">
+      {% for product in products %}
+      <li style="display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1.25rem; border-bottom:1px solid rgba(212,212,212,0.5);">
+        <div>
+          <p style="font-size:0.88rem; font-weight:500; color:var(--black); margin:0 0 0.15rem;">{{ product.name }}</p>
+          <p style="font-size:0.75rem; color:var(--gray-400); margin:0;">{{ product.variants|length }} variant(s)</p>
+        </div>
+        <span style="display:inline-flex; align-items:center; padding:0.2rem 0.6rem; border-radius:999px; background:rgba(21,128,61,0.08); border:1px solid rgba(21,128,61,0.25); font-size:0.72rem; font-weight:500; color:#15803d;">active</span>
+      </li>
+      {% else %}
+      <li style="padding:2.5rem; text-align:center; color:var(--gray-400); font-size:0.88rem;">No products in catalog.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+</div>
+{% endblock %}

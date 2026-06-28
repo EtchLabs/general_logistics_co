@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Cart — General Logistics Co{% endblock %}
+
+{% block content %}
+<h1 style="font-size:1.6rem; font-weight:600; color:var(--black); margin:0 0 1.5rem;">Shopping cart</h1>
+
+{% if error %}
+<div class="glc-alert-error" style="margin-bottom:1.25rem;">{{ error }}</div>
+{% endif %}
+
+{% if cart_items %}
+<div class="glc-card" style="overflow:hidden; margin-bottom:1.5rem;">
+  <table class="glc-table">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>SKU</th>
+        <th style="text-align:right;">Price</th>
+        <th style="text-align:center;">Qty</th>
+        <th style="text-align:right;">Total</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in cart_items %}
+      <tr>
+        <td style="font-weight:500;">{{ item.product_name }}</td>
+        <td style="color:var(--gray-400); font-size:0.82rem; font-family:monospace;">{{ item.sku }}</td>
+        <td style="text-align:right; color:var(--gray-700);">${{ "%.2f"|format(item.unit_price) }}</td>
+        <td style="text-align:center;">
+          <form action="/cart/update" method="post" style="display:inline-flex; align-items:center; gap:0.5rem;">
+            <input type="hidden" name="sku" value="{{ item.sku }}">
+            <input type="number" name="quantity" value="{{ item.quantity }}" min="0" max="99"
+                   class="glc-input" style="width:4rem; text-align:center; padding:0.35rem 0.5rem;">
+            <button type="submit" style="font-size:0.78rem; color:var(--blue); background:none; border:none; cursor:pointer; padding:0; transition:opacity 0.15s;"
+                    onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">Update</button>
+          </form>
+        </td>
+        <td style="text-align:right; font-weight:500;">${{ "%.2f"|format(item.line_total) }}</td>
+        <td style="text-align:right;">
+          <form action="/cart/remove" method="post">
+            <input type="hidden" name="sku" value="{{ item.sku }}">
+            <button type="submit" style="font-size:0.78rem; color:#b91c1c; background:none; border:none; cursor:pointer; padding:0; transition:opacity 0.15s;"
+                    onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">Remove</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+  <a href="/"
+     style="font-size:0.85rem; color:var(--gray-500); text-decoration:none; transition:color 0.15s;"
+     onmouseover="this.style.color='var(--black)'" onmouseout="this.style.color='var(--gray-500)'">
+    &larr; Continue shopping
+  </a>
+  <div style="text-align:right;">
+    <p style="font-size:0.8rem; color:var(--gray-400); margin:0 0 0.25rem;">Subtotal</p>
+    <p style="font-size:1.6rem; font-weight:700; color:var(--black); margin:0 0 1rem;">${{ "%.2f"|format(subtotal) }}</p>
+    <a href="/checkout" class="btn-dark">Proceed to checkout</a>
+  </div>
+</div>
+
+{% else %}
+<div style="border:1px dashed var(--gray-300); background:var(--white); border-radius:14px; padding:4rem 2rem; text-align:center;">
+  <p style="font-size:1rem; font-weight:500; color:var(--gray-700); margin:0 0 0.75rem;">Your cart is empty</p>
+  <a href="/"
+     style="font-size:0.88rem; color:var(--blue); text-decoration:none; transition:opacity 0.15s;"
+     onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">Browse widgets</a>
+</div>
+{% endif %}
+{% endblock %}

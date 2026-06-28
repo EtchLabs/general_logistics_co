@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} — General Logistics Co{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:1.5rem;">
+  <a href="/" style="font-size:0.85rem; color:var(--gray-500); text-decoration:none; transition:color 0.15s;"
+     onmouseover="this.style.color='var(--black)'" onmouseout="this.style.color='var(--gray-500)'">
+    &larr; Back to shop
+  </a>
+</div>
+
+<div style="display:grid; gap:2.5rem; grid-template-columns:1fr 1fr; align-items:start;">
+  <!-- Product image area -->
+  <div style="display:flex; height:320px; align-items:center; justify-content:center; border-radius:14px; border:1px solid var(--gray-300); background:var(--gray-100); font-size:6rem;">
+    {{ product.icon if product.icon else '📦' }}
+  </div>
+
+  <!-- Product details -->
+  <div>
+    <h1 style="font-size:1.9rem; font-weight:600; color:var(--black); margin:0 0 1rem; line-height:1.2;">{{ product.name }}</h1>
+    <p style="color:var(--gray-700); line-height:1.7; font-size:0.93rem; margin:0 0 2rem;">{{ product.description }}</p>
+
+    <form action="/cart/add" method="post" class="glc-section" style="display:flex; flex-direction:column; gap:1.1rem;">
+      <div>
+        <label for="sku" class="glc-label">Select variant</label>
+        <select name="sku" id="sku" required class="glc-input">
+          {% for variant in product.variants %}
+          {% set p = product.pricing.get(variant.sku, {}) %}
+          <option value="{{ variant.sku }}">
+            {{ variant.sku }}
+            {% if p %}— ${{ p.sale_price or p.msrp }}{% endif %}
+            {% if variant.attributes %}({{ variant.attributes.values() | join(', ') }}){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="quantity" class="glc-label">Quantity</label>
+        <input type="number" name="quantity" id="quantity" value="1" min="1" max="99" class="glc-input" style="width:6rem;">
+      </div>
+
+      <input type="hidden" name="product_name" value="{{ product.name }}">
+
+      <button type="submit" class="btn-dark" style="width:100%; padding:0.75rem;">Add to cart</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

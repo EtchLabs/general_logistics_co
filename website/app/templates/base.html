@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}General Logistics Co{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            glc: {
+              50:  '#f5f5f5',
+              100: '#eeeeee',
+              200: '#d4d4d4',
+              300: '#9a9a9a',
+              400: '#767676',
+              500: '#9bcce7',
+              600: '#080808',
+              700: '#111111',
+              800: '#4a4a4a',
+              900: '#1c1c1c',
+            }
+          },
+          fontFamily: {
+            display: ['Cinzel', '"Times New Roman"', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --blue: #9bcce7;
+      --blue-light: #dceef7;
+      --blue-muted: rgba(155, 204, 231, 0.45);
+      --blue-glow: rgba(155, 204, 231, 0.18);
+      --black: #080808;
+      --gray-900: #111111;
+      --gray-800: #1c1c1c;
+      --gray-700: #4a4a4a;
+      --gray-500: #767676;
+      --gray-400: #9a9a9a;
+      --gray-300: #d4d4d4;
+      --gray-100: #f5f5f5;
+      --white: #ffffff;
+      --surface-dark: #0a0a0a;
+      --surface-dark-border: #1e1e1e;
+      --frame-radius: 18px;
+      --line: 1px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--white);
+      color: var(--black);
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Frame ── */
+    .glc-frame {
+      margin: 0.75rem;
+      min-height: calc(100vh - 1.5rem);
+      border: var(--line) solid rgba(155, 204, 231, 0.5);
+      border-radius: var(--frame-radius);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Typography ── */
+    .glc-wordmark {
+      font-family: 'Cinzel', 'Times New Roman', serif;
+      letter-spacing: 0.06em;
+      font-weight: 500;
+    }
+
+    /* ── Logo badge ── */
+    .glc-logo-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: var(--surface-dark);
+      border: var(--line) solid rgba(155, 204, 231, 0.35);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Nav links ── */
+    .glc-nav-link {
+      font-size: 0.88rem;
+      color: var(--gray-500);
+      text-decoration: none;
+      letter-spacing: 0.01em;
+      transition: color 0.15s;
+    }
+    .glc-nav-link:hover { color: var(--black); }
+
+    /* ── Buttons ── */
+    .btn-dark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.6rem 1.4rem;
+      border-radius: 999px;
+      background: var(--black);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: var(--line) solid transparent;
+      cursor: pointer;
+      text-decoration: none;
+      letter-spacing: 0.01em;
+      transition: background 0.18s, box-shadow 0.18s;
+    }
+    .btn-dark:hover {
+      background: var(--gray-900);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.22);
+    }
+    .btn-dark:disabled { opacity: 0.45; cursor: default; }
+
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.6rem 1.4rem;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--blue);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: var(--line) solid rgba(155, 204, 231, 0.7);
+      cursor: pointer;
+      text-decoration: none;
+      letter-spacing: 0.01em;
+      transition: border-color 0.18s, background 0.18s;
+    }
+    .btn-outline:hover {
+      border-color: var(--blue);
+      background: var(--blue-glow);
+    }
+
+    /* ── Cards ── */
+    .glc-card {
+      background: var(--white);
+      border: var(--line) solid var(--gray-300);
+      border-radius: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .glc-card:hover {
+      border-color: rgba(155, 204, 231, 0.55);
+      box-shadow: 0 4px 18px rgba(155, 204, 231, 0.1);
+    }
+
+    .glc-section {
+      background: var(--white);
+      border: var(--line) solid var(--gray-300);
+      border-radius: 14px;
+      padding: 1.5rem;
+    }
+
+    /* ── Feature card (dark, Decius-style) ── */
+    .glc-feature-card {
+      background: var(--surface-dark);
+      border: var(--line) solid var(--surface-dark-border);
+      border-radius: 14px;
+      padding: 2.5rem 3rem;
+    }
+
+    .glc-eyebrow {
+      font-family: 'Cinzel', serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--blue);
+      opacity: 0.9;
+    }
+
+    /* ── Form elements ── */
+    .glc-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--gray-700);
+      margin-bottom: 0.35rem;
+    }
+    .glc-input {
+      width: 100%;
+      border: var(--line) solid var(--gray-300);
+      border-radius: 10px;
+      padding: 0.6rem 0.85rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      color: var(--black);
+      background: var(--white);
+      outline: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .glc-input:focus {
+      border-color: var(--blue-muted);
+      box-shadow: 0 0 0 3px var(--blue-glow);
+    }
+
+    /* ── Notices & alerts ── */
+    .glc-notice {
+      border: var(--line) solid rgba(155, 204, 231, 0.4);
+      background: rgba(155, 204, 231, 0.06);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      color: var(--gray-700);
+    }
+    .glc-alert-error {
+      border: var(--line) solid rgba(220, 38, 38, 0.3);
+      background: rgba(220, 38, 38, 0.05);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      color: #b91c1c;
+    }
+    .glc-alert-warn {
+      border: var(--line) solid rgba(217, 119, 6, 0.3);
+      background: rgba(217, 119, 6, 0.05);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      color: #92400e;
+    }
+
+    /* ── Table ── */
+    .glc-table { width: 100%; border-collapse: collapse; }
+    .glc-table th {
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gray-500);
+      padding: 0.75rem 1.25rem;
+      border-bottom: var(--line) solid var(--gray-300);
+      background: var(--gray-100);
+    }
+    .glc-table td {
+      padding: 0.9rem 1.25rem;
+      border-bottom: var(--line) solid rgba(212, 212, 212, 0.5);
+      font-size: 0.88rem;
+      color: var(--black);
+    }
+    .glc-table tbody tr:last-child td { border-bottom: none; }
+    .glc-table tbody tr:hover td { background: rgba(155, 204, 231, 0.04); }
+
+    /* ── Cart badge ── */
+    .glc-cart-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 0.35rem;
+      margin-left: 0.3rem;
+      background: var(--black);
+      color: #fff;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      vertical-align: middle;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeUp  {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .glc-header { animation: fadeIn 0.4s ease both; }
+    .glc-page   { animation: fadeUp 0.55s 0.05s ease both; }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .glc-frame { margin: 0.4rem; }
+      .glc-nav-wordmark { display: none; }
+      .glc-feature-card { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glc-frame">
+
+    <!-- Header -->
+    <header class="glc-header" style="display:flex; align-items:center; justify-content:space-between; padding:1.1rem 2rem; border-bottom:1px solid rgba(155,204,231,0.22);">
+      <a href="/" style="display:flex; align-items:center; gap:0.75rem; text-decoration:none;">
+        <div class="glc-logo-badge">
+          <span class="glc-wordmark" style="font-size:0.95rem; color:var(--blue);">G</span>
+        </div>
+        <div class="glc-nav-wordmark">
+          <span class="glc-wordmark" style="font-size:0.92rem; color:var(--black);">GENERAL LOGISTICS CO</span>
+          <span style="display:block; font-size:0.68rem; color:var(--gray-400); letter-spacing:0.01em; margin-top:1px;">Quality widgets, delivered.</span>
+        </div>
+      </a>
+      <nav style="display:flex; align-items:center; gap:2rem;">
+        <a href="/" class="glc-nav-link">Shop</a>
+        <a href="/cart" class="glc-nav-link">
+          Cart{% if cart_count is defined and cart_count %}<span class="glc-cart-badge">{{ cart_count }}</span>{% endif %}
+        </a>
+        {% if customer_name %}<span style="font-size:0.82rem; color:var(--gray-400);">{{ customer_name }}</span>{% endif %}
+        <a href="/admin" class="btn-outline" style="font-size:0.78rem; padding:0.4rem 0.9rem;">Admin</a>
+      </nav>
+    </header>
+
+    <!-- Main content -->
+    <main class="glc-page" style="flex:1; padding:2rem 2.5rem;">
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer style="padding:1.1rem 2.5rem; border-top:1px solid rgba(0,0,0,0.07); display:flex; align-items:center; justify-content:space-between;">
+      <span class="glc-wordmark" style="font-size:0.78rem; color:var(--gray-400);">GLC</span>
+      <span style="font-size:0.78rem; color:var(--gray-400);">&copy; 2026 General Logistics Co. All rights reserved.</span>
+    </footer>
+
+  </div>
+</body>
+</html>

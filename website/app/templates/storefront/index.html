@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Storefront — General Logistics Co{% endblock %}
+
+{% block content %}
+
+<!-- Hero: Decius dark feature card -->
+<div class="glc-feature-card" style="display:grid; grid-template-columns:1fr auto; gap:2rem; align-items:center; margin-bottom:2.5rem;">
+  <div>
+    <p class="glc-eyebrow" style="margin-bottom:0.85rem;">Widget Catalog</p>
+    <h1 style="margin:0 0 1rem; font-size:clamp(1.9rem, 4vw, 2.8rem); font-weight:600; line-height:1.1; color:#ffffff;">
+      Shop Our Widget<br>
+      <span style="font-weight:400; color:rgba(255,255,255,0.45);">Collection</span>
+    </h1>
+    <p style="margin:0 0 1.5rem; color:#9a9a9a; max-width:44ch; line-height:1.65; font-size:0.93rem;">
+      Twelve precision widgets across classic, premium, and industrial lines. Add to cart, checkout, and your order flows straight into our fulfillment system.
+    </p>
+    <p style="margin:0 0 1.75rem; font-size:0.8rem; color:#767676;">{{ product_count }} widgets available</p>
+    <a href="#catalog" class="btn-outline">Browse Catalog</a>
+  </div>
+  <!-- Globe placeholder à la Decius -->
+  <div style="display:flex; align-items:center; justify-content:center; padding:1.5rem 2rem;">
+    <div style="
+      width: 150px; height: 150px;
+      border-radius: 50%;
+      border: 1px solid rgba(155, 204, 231, 0.4);
+      background:
+        radial-gradient(circle at 35% 35%, transparent 57%, rgba(155,204,231,0.2) 58%, transparent 60%),
+        radial-gradient(circle at 65% 48%, transparent 57%, rgba(155,204,231,0.2) 58%, transparent 60%),
+        radial-gradient(circle at 50% 70%, transparent 57%, rgba(155,204,231,0.2) 58%, transparent 60%);
+      box-shadow: 0 0 40px rgba(155,204,231,0.08) inset, 0 0 12px rgba(155,204,231,0.05);
+    "></div>
+  </div>
+</div>
+
+{% if error %}
+<div class="glc-alert-warn" style="margin-bottom:1.5rem;">{{ error }}</div>
+{% endif %}
+
+{% if products %}
+<div id="catalog" style="display:grid; gap:1.25rem; grid-template-columns:repeat(auto-fill, minmax(215px, 1fr));">
+  {% for product in products %}
+  <article class="glc-card" style="display:flex; flex-direction:column; overflow:hidden;">
+    <a href="/products/{{ product.id }}"
+       style="display:flex; height:120px; align-items:center; justify-content:center; background:var(--gray-100); font-size:2.6rem; text-decoration:none; transition:background 0.2s;"
+       onmouseover="this.style.background='rgba(155,204,231,0.1)'"
+       onmouseout="this.style.background='var(--gray-100)'">
+      {{ product.icon }}
+    </a>
+    <div style="display:flex; flex-direction:column; flex:1; padding:1rem;">
+      <a href="/products/{{ product.id }}"
+         style="font-size:0.93rem; font-weight:600; color:var(--black); text-decoration:none; margin-bottom:0.35rem; transition:color 0.15s;"
+         onmouseover="this.style.color='var(--blue)'"
+         onmouseout="this.style.color='var(--black)'">{{ product.name }}</a>
+      <p style="font-size:0.8rem; color:var(--gray-500); flex:1; line-height:1.55; margin:0 0 0.85rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+        {{ product.description or 'No description.' }}
+      </p>
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        {% if product.display_price %}
+        <span style="font-size:0.93rem; font-weight:700; color:var(--black);">${{ product.display_price }}</span>
+        {% else %}
+        <span style="font-size:0.78rem; color:var(--gray-400);">View pricing</span>
+        {% endif %}
+        {% if product.default_sku %}
+        <form action="/cart/add" method="post">
+          <input type="hidden" name="sku" value="{{ product.default_sku }}">
+          <input type="hidden" name="quantity" value="1">
+          <input type="hidden" name="product_name" value="{{ product.name }}">
+          <button type="submit" class="btn-dark" style="font-size:0.78rem; padding:0.38rem 0.9rem;">Add</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div style="border:1px dashed var(--gray-300); background:var(--white); border-radius:14px; padding:4rem 2rem; text-align:center;">
+  <p style="font-size:1rem; font-weight:500; color:var(--gray-700);">No products to display</p>
+  <p style="margin-top:0.5rem; font-size:0.85rem; color:var(--gray-400);">Run the catalog seed script to populate the 12-widget catalog.</p>
+</div>
+{% endif %}
+
+{% endblock %}
