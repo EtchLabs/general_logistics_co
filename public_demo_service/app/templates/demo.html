@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GLC Live Demo — General Logistics Co</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #9bcce7;
+      --blue-muted: rgba(155, 204, 231, 0.45);
+      --blue-glow: rgba(155, 204, 231, 0.12);
+      --blue-border: rgba(155, 204, 231, 0.3);
+      --black: #080808;
+      --gray-900: #111111;
+      --gray-700: #4a4a4a;
+      --gray-500: #767676;
+      --gray-400: #9a9a9a;
+      --gray-300: #d4d4d4;
+      --gray-100: #f5f5f5;
+      --white: #ffffff;
+      --line: 1px;
+    }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--white);
+      color: var(--black);
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .glc-wordmark {
+      font-family: 'Cinzel', 'Times New Roman', serif;
+      letter-spacing: 0.06em;
+      font-weight: 500;
+    }
+    .glc-logo-badge {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      background: var(--black);
+      border: var(--line) solid rgba(155, 204, 231, 0.4);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Header ── */
+    .demo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      border-bottom: var(--line) solid var(--blue-border);
+      background: var(--white);
+    }
+    .demo-header__brand { display: flex; align-items: center; gap: 0.75rem; }
+    .demo-header__title { font-size: 0.9rem; color: var(--black); }
+    .demo-header__sub { font-size: 0.68rem; color: var(--gray-400); margin-top: 1px; letter-spacing: 0.01em; }
+
+    .stats-bar { display: none; align-items: center; gap: 1.5rem; font-size: 0.75rem; }
+    .stats-bar.visible { display: flex; }
+    .stats-bar__label { color: var(--gray-400); }
+    .stats-bar__val { font-weight: 600; color: var(--black); margin-left: 0.25rem; }
+    .stats-bar__val--blue { color: var(--black); }
+
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      border-radius: 999px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.72rem; font-weight: 500;
+      background: rgba(155, 204, 231, 0.1);
+      border: var(--line) solid rgba(155, 204, 231, 0.35);
+      color: var(--blue);
+    }
+    .live-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--blue);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+    }
+    #ws-status { font-size: 0.72rem; color: var(--gray-400); }
+
+    /* ── Tab bar ── */
+    .tab-bar {
+      display: flex;
+      border-bottom: var(--line) solid var(--blue-border);
+      background: var(--white);
+      padding: 0 1.5rem;
+    }
+
+    /* ── Layout ── */
+    .demo-body {
+      display: flex;
+      height: calc(100vh - 7rem);
+    }
+
+    /* ── Activity sidebar ── */
+    .activity-sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-right: var(--line) solid var(--blue-border);
+      background: var(--gray-100);
+    }
+    .activity-sidebar__header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.85rem 1rem;
+      border-bottom: var(--line) solid var(--blue-border);
+    }
+    .activity-sidebar__icon {
+      width: 26px; height: 26px;
+      border-radius: 7px;
+      background: rgba(155, 204, 231, 0.12);
+      border: var(--line) solid rgba(155, 204, 231, 0.3);
+      display: grid; place-items: center;
+      font-size: 0.8rem;
+    }
+    .activity-sidebar__title { font-size: 0.82rem; font-weight: 600; color: var(--black); }
+    .activity-sidebar__sub { font-size: 0.68rem; color: var(--gray-400); }
+    #activity-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      list-style: none;
+    }
+
+    /* ── Board ── */
+    .board-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: var(--white);
+    }
+    #flow-toast {
+      position: absolute;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      pointer-events: none;
+      border: var(--line) solid var(--blue-border);
+      background: var(--white);
+      color: var(--gray-700);
+      border-radius: 12px;
+      padding: 0.5rem 1.25rem;
+      font-size: 0.82rem;
+      box-shadow: 0 4px 16px rgba(155, 204, 231, 0.15);
+    }
+  </style>
+  <link rel="stylesheet" href="/static/demo.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="demo-header">
+    <div class="demo-header__brand">
+      <div class="glc-logo-badge">
+        <span class="glc-wordmark" style="font-size:0.9rem; color:var(--blue);">G</span>
+      </div>
+      <div>
+        <div class="glc-wordmark demo-header__title">GENERAL LOGISTICS CO</div>
+        <div class="demo-header__sub">Live operations demo</div>
+      </div>
+    </div>
+
+    <div id="stats-bar" class="stats-bar">
+      <div><span class="stats-bar__label">Orders</span><strong id="stat-orders" class="stats-bar__val">—</strong></div>
+      <div><span class="stats-bar__label">Revenue</span><strong id="stat-revenue" class="stats-bar__val stats-bar__val--blue">—</strong></div>
+      <div><span class="stats-bar__label">Avg order</span><strong id="stat-aov" class="stats-bar__val">—</strong></div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:0.75rem;">
+      <span id="live-badge" class="live-badge">
+        <span class="live-dot"></span>
+        Live
+      </span>
+      <span id="ws-status">Connecting…</span>
+    </div>
+  </header>
+
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button id="tab-business" class="tab-btn active" data-tab="business">Business Ops</button>
+  </div>
+
+  <!-- Body -->
+  <div class="demo-body">
+
+    <!-- Activity sidebar -->
+    <aside class="activity-sidebar">
+      <div class="activity-sidebar__header">
+        <div class="activity-sidebar__icon">🛒</div>
+        <div>
+          <div class="activity-sidebar__title">Storefront activity</div>
+          <div class="activity-sidebar__sub">New sales &amp; operations</div>
+        </div>
+      </div>
+      <ul id="activity-feed"></ul>
+    </aside>
+
+    <!-- Board -->
+    <main class="board-area">
+      <div id="board-business" class="board-panel active" style="height:100%; width:100%;"></div>
+      <div id="flow-toast"></div>
+    </main>
+
+  </div>
+
+  <script src="/static/demo.js"></script>
+</body>
+</html>
