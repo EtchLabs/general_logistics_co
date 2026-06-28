@@ -1,0 +1,638 @@
+name: glc
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: glc_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-glc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-glc_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-glc}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-glc} -d ${POSTGRES_DB:-glc}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  mongo:
+    # MongoDB 5+ requires AVX; use 4.4 on hosts without AVX (e.g. some VMs)
+    image: mongo:4.4
+    container_name: glc_mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-glc}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-glc_dev_password}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-glc}
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - ./data/mongo:/data/db
+    networks:
+      - glc_network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongo",
+          "--quiet",
+          "-u",
+          "${MONGO_USER:-glc}",
+          "-p",
+          "${MONGO_PASSWORD:-glc_dev_password}",
+          "--authenticationDatabase",
+          "admin",
+          "--eval",
+          "db.adminCommand('ping')",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  redis:
+    image: redis:7-alpine
+    container_name: glc_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  api_gateway:
+    build:
+      context: ./api_gateway
+      dockerfile: Dockerfile
+    container_name: glc_api_gateway
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      MONGO_HOST: mongo
+      REDIS_HOST: redis
+      SERVICE_NAME: api_gateway
+      SERVICE_VERSION: "0.1.0"
+      CUSTOMER_SERVICE_URL: http://customer_service:8001
+      PRODUCT_SERVICE_URL: http://product_service:8002
+      ORDER_SERVICE_URL: http://order_service:8003
+      INVENTORY_SERVICE_URL: http://inventory_service:8004
+      FULFILLMENT_SERVICE_URL: http://fulfillment_service:8005
+      SHIPPING_SERVICE_URL: http://shipping_service:8006
+      PAYMENT_SERVICE_URL: http://payment_service:8007
+      TAX_SERVICE_URL: http://tax_service:8008
+      SUPPLIER_SERVICE_URL: http://supplier_service:8009
+      ACCOUNTING_SERVICE_URL: http://accounting_service:8010
+      HR_PAYROLL_SERVICE_URL: http://hr_payroll_service:8011
+      NOTIFICATION_SERVICE_URL: http://notification_service:8012
+      REPORTING_SERVICE_URL: http://reporting_service:8013
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  customer_service:
+    build:
+      context: ./customer_service
+      dockerfile: Dockerfile
+    container_name: glc_customer_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      MONGO_HOST: mongo
+      REDIS_HOST: redis
+      POSTGRES_SCHEMA: customers
+      SERVICE_NAME: customer_service
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${CUSTOMER_SERVICE_PORT:-8001}:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  product_service:
+    build:
+      context: ./product_service
+      dockerfile: Dockerfile
+    container_name: glc_product_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      MONGO_HOST: mongo
+      REDIS_HOST: redis
+      POSTGRES_SCHEMA: products_pricing
+      SERVICE_NAME: product_service
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${PRODUCT_SERVICE_PORT:-8002}:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  order_service:
+    build:
+      context: ./order_service
+      dockerfile: Dockerfile
+    container_name: glc_order_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      POSTGRES_SCHEMA: orders
+      SERVICE_NAME: order_service
+      SERVICE_VERSION: "0.1.0"
+      CUSTOMER_SERVICE_URL: http://customer_service:8001
+      PRODUCT_SERVICE_URL: http://product_service:8002
+    ports:
+      - "${ORDER_SERVICE_PORT:-8003}:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      customer_service:
+        condition: service_healthy
+      product_service:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  inventory_service:
+    build:
+      context: ./inventory_service
+      dockerfile: Dockerfile
+    container_name: glc_inventory_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      POSTGRES_SCHEMA: inventory
+      SERVICE_NAME: inventory_service
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${INVENTORY_SERVICE_PORT:-8004}:8004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  fulfillment_service:
+    build:
+      context: ./fulfillment_service
+      dockerfile: Dockerfile
+    container_name: glc_fulfillment_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      POSTGRES_SCHEMA: fulfillment
+      SHIPPING_SERVICE_URL: http://shipping_service:8006
+      SERVICE_NAME: fulfillment_service
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${FULFILLMENT_SERVICE_PORT:-8005}:8005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      shipping_service:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  shipping_service:
+    build:
+      context: ./shipping_service
+      dockerfile: Dockerfile
+    container_name: glc_shipping_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      POSTGRES_SCHEMA: shipping
+      SERVICE_NAME: shipping_service
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${SHIPPING_SERVICE_PORT:-8006}:8006"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  payment_service:
+    build:
+      context: ./payment_service
+      dockerfile: Dockerfile
+    container_name: glc_payment_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_SCHEMA: payments
+      SERVICE_NAME: payment_service
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${PAYMENT_SERVICE_PORT:-8007}:8007"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8007/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  tax_service:
+    build:
+      context: ./tax_service
+      dockerfile: Dockerfile
+    container_name: glc_tax_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_SCHEMA: tax
+      SERVICE_NAME: tax_service
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${TAX_SERVICE_PORT:-8008}:8008"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  supplier_service:
+    build:
+      context: ./supplier_service
+      dockerfile: Dockerfile
+    container_name: glc_supplier_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_SCHEMA: suppliers
+      SERVICE_NAME: supplier_service
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${SUPPLIER_SERVICE_PORT:-8009}:8009"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8009/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  accounting_service:
+    build:
+      context: ./accounting_service
+      dockerfile: Dockerfile
+    container_name: glc_accounting_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_SCHEMA: accounting
+      SERVICE_NAME: accounting_service
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${ACCOUNTING_SERVICE_PORT:-8010}:8010"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  hr_payroll_service:
+    build:
+      context: ./hr_payroll_service
+      dockerfile: Dockerfile
+    container_name: glc_hr_payroll_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_SCHEMA: hr_payroll
+      ACCOUNTING_SERVICE_URL: http://accounting_service:8010
+      SERVICE_NAME: hr_payroll_service
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${HR_PAYROLL_SERVICE_PORT:-8011}:8011"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      accounting_service:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8011/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  notification_service:
+    build:
+      context: ./notification_service
+      dockerfile: Dockerfile
+    container_name: glc_notification_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MONGO_HOST: mongo
+      REDIS_HOST: redis
+      SERVICE_NAME: notification_service
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT:-8012}:8012"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8012/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  reporting_service:
+    build:
+      context: ./reporting_service
+      dockerfile: Dockerfile
+    container_name: glc_reporting_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MONGO_HOST: mongo
+      REDIS_HOST: redis
+      ORDER_SERVICE_URL: http://order_service:8003
+      PRODUCT_SERVICE_URL: http://product_service:8002
+      SERVICE_NAME: reporting_service
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${REPORTING_SERVICE_PORT:-8013}:8013"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      order_service:
+        condition: service_healthy
+      product_service:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8013/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  website:
+    build:
+      context: ./website
+      dockerfile: Dockerfile
+    container_name: glc_website
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      API_GATEWAY_URL: http://api_gateway:8080
+      REDIS_URL: redis://redis:6379/0
+      SERVICE_NAME: website
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${WEBSITE_PORT:-8000}:8000"
+    depends_on:
+      api_gateway:
+        condition: service_healthy
+      customer_service:
+        condition: service_healthy
+      product_service:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  customer_simulator:
+    build:
+      context: ./customer_simulator
+      dockerfile: Dockerfile
+    container_name: glc_customer_simulator
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      API_GATEWAY_URL: http://api_gateway:8080
+      SIMULATOR_ORDER_INTERVAL_MIN_SECONDS: ${SIMULATOR_ORDER_INTERVAL_MIN_SECONDS:-5}
+      SIMULATOR_ORDER_INTERVAL_MAX_SECONDS: ${SIMULATOR_ORDER_INTERVAL_MAX_SECONDS:-10}
+      SIMULATOR_NEW_CUSTOMER_PCT: ${SIMULATOR_NEW_CUSTOMER_PCT:-12}
+      SIMULATOR_HEALTH_PORT: 8020
+    ports:
+      - "${CUSTOMER_SIMULATOR_HEALTH_PORT:-8020}:8020"
+    depends_on:
+      api_gateway:
+        condition: service_healthy
+      order_service:
+        condition: service_healthy
+      product_service:
+        condition: service_healthy
+      customer_service:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8020/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  public_demo_service:
+    build:
+      context: ./public_demo_service
+      dockerfile: Dockerfile
+    container_name: glc_public_demo
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      API_GATEWAY_URL: http://api_gateway:8080
+      REDIS_URL: redis://redis:6379/0
+      SERVICE_NAME: public_demo_service
+      SERVICE_VERSION: "0.1.0"
+    ports:
+      - "${PUBLIC_DEMO_PORT:-8021}:8021"
+    depends_on:
+      api_gateway:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      order_service:
+        condition: service_healthy
+    networks:
+      - glc_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8021/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  supplier_simulator:
+    build:
+      context: ./supplier_simulator
+      dockerfile: Dockerfile
+    container_name: glc_supplier_simulator
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      API_GATEWAY_URL: http://api_gateway:8080
+      SUPPLIER_POLL_INTERVAL_SECONDS: ${SUPPLIER_POLL_INTERVAL_SECONDS:-30}
+    depends_on:
+      api_gateway:
+        condition: service_healthy
+      supplier_service:
+        condition: service_healthy
+    networks:
+      - glc_network
+
+networks:
+  glc_network:
+    name: glc_network
+    driver: bridge
